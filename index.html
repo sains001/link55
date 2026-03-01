@@ -22,7 +22,7 @@
 
 <div id="top-panel">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-        <div id="status" style="font-size: 11px; color: #888;">Menghubungkan ke API...</div>
+        <div id="status" style="font-size: 11px; color: #888;">Menghubungkan...</div>
         <div style="font-size: 12px;">Prediksi: <span id="next-guess" style="color: #ffeb3b;">---</span></div>
     </div>
     
@@ -45,11 +45,12 @@
 </div>
 
 <script>
-    // DATA DARI CODE ASLI ANDA
+    // MASUKKAN TOKEN TERBARU ANDA DI SINI (WAJIB FRESH)
     const AUTH_HEADER = "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpYXQiOiIxNzM3MjUyMzk3IiwibmJmIjoiMTczNzI1MjM5NyIsImV4cCI6IjE3MzcyNTQxOTciLCJodHRwOi8vc2NoZW1hcy5taWNyb3NvZnQuY29tL3dzLzIwMDgvMDYvaWRlbnRpdHkvY2xhaW1zL2V4cGlyYXRpb24iOiIxLzE5LzIwMjUgOTozNjozNyBBTSIsImh0dHA6Ly9zY2hlbWFzLm1pY3Jvc29mdC5jb20vd3MvMjAwOC8wNi9pZGVudGl0eS9jbGFpbXMvcm9sZSI6IkFjY2Vzc19Ub2tlbiIsIlVzZXJJZCI6IjQ0MTgwNCIsIlVzZXJOYW1lIjoiNjI4NTc5NjI5NzE4OSIsIlVzZXJQaG90byI6Imh0dHBzOi8vYXBpLmxpZ2h0c3BhY2VjZG4uY29tL2ltZy9hdmF0YXIuY2ZhOGRkOWQuc3ZnIiwiTmlja05hbWUiOiJSYWNrbmFyb2NLIiwiQW1vdW50IjoiMTM3LjAwIiwiSW50ZWdyYWwiOiIwIiwiTG9naW5NYXJrIjoiSDUiLCJMb2dpblRpbWUiOiIxLzE5LzIwMjUgOTowNjozNyBBTSIsIkxvZ2luSVBBZGRyZXNzIjoiMTE0LjEwLjEzNC4xODIiLCJEYk51bWJlciI6IjAiLCJJc3ZhbGlkYXRvciI6IjAiLCJLZXlDb2RlIjoiNTgwIiwiVG9rZW5UeXBlIjoiQWNjZXNzX1Rva2VuIiwiUGhvbmVUeXBlIjoiMSIsIlVzZXJUeXBlIjoiMCIsIlVzZXJOYW1lMiI6IiIsImlzcyI6Imp3dElzc3VlciIsImF1ZCI6ImxvdHRlcnlUaWNrZXQifQ.gSi3-FxVwLXKTA1drTBTrA6HqiASn6eBkmsWMyW2HP0";
+    
     const PROXY = "https://api.allorigins.win";
-    const API_LIST = "https://newapi.55lottertttapi.com";
-    const API_ISSUE = "https://newapi.55lottertttapi.com";
+    const API_ISSUE = "https://newapi.55lottertttapi.com/api/webapi/GetGameIssue";
+    const API_LIST = "https://newapi.55lottertttapi.com/api/webapi/GetNoaverageEmerdList";
 
     let history = [];
     let currentPrediction = "BESAR";
@@ -62,22 +63,21 @@
             const now = new Date();
             const sec = now.getSeconds();
             
-            // Sync Countdown & Periode
             let count = (sec < 30) ? (30 - sec) : (60 - sec);
             const live = document.getElementById('live-count');
             if (live) live.innerText = count + "s";
             
+            // Logika get_periode() setiap detik 0 atau 30
             if (sec === 0 || sec === 30) {
                 updateCurrentPeriod();
             }
 
-            // Ambil Hasil (Detik 1 & 31)
+            // Logika _fetch_number(1,0) setiap detik 1 atau 31
             if ((sec === 1 || sec === 31) && !isFetching) {
                 isFetching = true;
                 fetchFinalResult();
             }
 
-            // Reset Ronde Baru (Detik 3 & 33)
             if (sec === 3 || sec === 33) {
                 isFetching = false;
                 generatePrediction();
@@ -86,55 +86,65 @@
     }
 
     async function updateCurrentPeriod() {
+        const data = JSON.stringify({
+            "typeId": 30, "language": 0, 
+            "random": "166b81d9568e4123a83a2c7fdb80b7d9",
+            "signature": "5DB43C344C7381B72B5262FFB3572444", 
+            "timestamp": Math.floor(Date.now()/1000)
+        });
+
         try {
             const res = await fetch(PROXY + encodeURIComponent(API_ISSUE), {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'Authorization': AUTH_HEADER },
-                body: JSON.stringify({
-                    "typeId": 30,
-                    "language": 0,
-                    "random": "166b81d9568e4123a83a2c7fdb80b7d9",
-                    "signature": "5DB43C344C7381B72B5262FFB3572444",
-                    "timestamp": 1737252405
-                })
+                headers: { 'Content-Type': 'application/json; charset=UTF-8', 'Authorization': AUTH_HEADER },
+                body: data
             });
             const json = await res.json();
-            activePeriod = json.data.issueNumber.toString().slice(-5);
-            render();
-        } catch (e) { console.log("Issue API Error"); }
+            if (json.data && json.data.issueNumber) {
+                activePeriod = json.data.issueNumber.toString().slice(-5);
+                render();
+            }
+        } catch (e) { console.log("GetGameIssue Error"); }
     }
 
     async function fetchFinalResult() {
-        document.getElementById('status').innerText = "Cek Hasil...";
+        document.getElementById('status').innerText = "Syncing...";
+        const data = JSON.stringify({
+            "pageSize": 10, "pageNo": 1, "typeId": 30, "language": 0,
+            "random": "b631eb26bac6403e99093913e5bb48c5", 
+            "signature": "A6203E85132E5FE26B5F43DDF1ECDD07", 
+            "timestamp": Math.floor(Date.now()/1000)
+        });
+
         try {
             const res = await fetch(PROXY + encodeURIComponent(API_LIST), {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'Authorization': AUTH_HEADER },
-                body: JSON.stringify({
-                    "pageSize": 10,
-                    "pageNo": 1,
-                    "typeId": 30,
-                    "language": 0,
-                    "random": "b631eb26bac6403e99093913e5bb48c5",
-                    "signature": "A6203E85132E5FE26B5F43DDF1ECDD07",
-                    "timestamp": 1737252405
-                })
+                headers: { 'Content-Type': 'application/json; charset=UTF-8', 'Authorization': AUTH_HEADER },
+                body: data
             });
-            const json = await res.json();
-            const lastData = json.data.list[0]; // Baris teratas (terbaru)
+            const result = await res.json();
             
-            const resPeriod = lastData.issueNumber.toString().slice(-5);
-            const num = parseInt(lastData.number.split(",").pop());
-            const cat = num >= 5 ? "BESAR" : "KECIL";
-            const status = (currentPrediction === cat) ? "WIN" : "LOSE";
+            // Logika Sama dengan Python: result.get('data').get('list')[0]
+            const lst = result.data.list;
+            if (lst && lst.length > 0) {
+                const item terbaru = lst[0];
+                const resPeriod = terbaru.issueNumber.toString().slice(-5);
+                
+                // Logika: num = int(num.strip().split(",")[-1])
+                const rawNumber = terbaru.number;
+                const num = parseInt(rawNumber.split(",").pop());
+                
+                const cat = num >= 5 ? "BESAR" : "KECIL";
+                const status = (currentPrediction === cat) ? "WIN" : "LOSE";
 
-            history.unshift({ period: resPeriod, pred: currentPrediction, num, cat, stat: status });
-            if (history.length > 6) history.pop();
-            
-            render();
-            document.getElementById('status').innerText = "Berhasil";
+                history.unshift({ period: resPeriod, pred: currentPrediction, num, cat, stat: status });
+                if (history.length > 6) history.pop();
+                
+                render();
+                document.getElementById('status').innerText = "OK";
+            }
         } catch (e) {
-            document.getElementById('status').innerText = "Token Expired / Error API";
+            document.getElementById('status').innerText = "Error API/Token";
         }
     }
 
