@@ -1,3 +1,78 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Prediksi Random</title>
+    <style>
+        body{
+            font-family: Arial;
+            background:#111;
+            color:white;
+            text-align:center;
+        }
+        table{
+            width:100%;
+            border-collapse:collapse;
+            margin-top:20px;
+        }
+        th,td{
+            border:1px solid #444;
+            padding:8px;
+        }
+        th{
+            background:#222;
+        }
+    </style>
+</head>
+<body>
+
+<h2>PERIODE: <span id="periode">-</span></h2>
+<h1>PREDIKSI: <span id="prediksi">-</span></h1>
+
+<table>
+    <thead>
+        <tr>
+            <th>Count</th>
+            <th>Periode</th>
+            <th>Prediksi</th>
+            <th>Hasil</th>
+            <th>Status</th>
+        </tr>
+    </thead>
+    <tbody id="historyTable"></tbody>
+</table>
+
+<script>
+
+let lastPeriode = null;
+let currentPrediction = null;
+let historyData = [];
+let countNumber = 0;
+
+function kategori(num){
+    return num >= 5 ? "Besar" : "Kecil";
+}
+
+function randomPrediksi(){
+    return Math.random() < 0.5 ? "Besar" : "Kecil";
+}
+
+function renderTable(){
+    const tbody = document.getElementById("historyTable");
+    tbody.innerHTML = "";
+
+    historyData.forEach(row=>{
+        tbody.innerHTML += `
+            <tr>
+                <td>${row.count}</td>
+                <td>${row.periode}</td>
+                <td>${row.prediksi}</td>
+                <td>${row.hasil}</td>
+                <td>${row.status}</td>
+            </tr>
+        `;
+    });
+}
+
 async function fetchData(){
     try{
         const res = await fetch("/api?t=" + Date.now());
@@ -7,9 +82,6 @@ async function fetchData(){
 
         if(data.periode !== lastPeriode){
 
-            // =========================
-            // HITUNG STATUS PERIODE LAMA
-            // =========================
             if(lastPeriode !== null && historyData.length > 0){
                 const hasilKategori = kategori(data.hasil);
                 const status = (currentPrediction === hasilKategori) ? "WIN" : "LOSE";
@@ -18,9 +90,6 @@ async function fetchData(){
                 historyData[0].status = status;
             }
 
-            // =========================
-            // BUAT PREDIKSI BARU
-            // =========================
             currentPrediction = randomPrediksi();
             countNumber++;
 
@@ -48,3 +117,11 @@ async function fetchData(){
         console.log("Fetch error:", e);
     }
 }
+
+setInterval(fetchData,2000);
+fetchData();
+
+</script>
+
+</body>
+</html>
