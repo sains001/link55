@@ -86,6 +86,7 @@ th{
 let currentRow = null;
 let timer = null;
 let resultChecked = false;
+let lastPeriode = null;
 
 function kategori(num){
   return num <= 4 ? "Kecil" : "Besar";
@@ -97,7 +98,7 @@ function buatPrediksi(){
 
 async function ambilAPI(){
   try{
-    const res = await fetch("https://link55.vercel.app/api");
+    const res = await fetch("https://link55.vercel.app/api?t="+Date.now());
     return await res.json();
   }catch(e){
     return null;
@@ -128,13 +129,13 @@ function mulaiCountdown(){
 
     const now = new Date();
     const sec = now.getSeconds();
-
     let sisa = sec < 30 ? 30 - sec : 60 - sec;
 
     if(currentRow){
       currentRow.querySelector(".count").innerText = sisa;
     }
 
+    // cek hasil saat detik 1 & 31
     if((sec === 1 || sec === 31) && !resultChecked){
       resultChecked = true;
       cekHasil();
@@ -145,7 +146,7 @@ function mulaiCountdown(){
 
 async function cekHasil(){
   const data = await ambilAPI();
-  if(!data) return;
+  if(!data || !currentRow) return;
 
   const hasil = data.hasil;
   const kategoriHasil = kategori(hasil);
@@ -164,21 +165,26 @@ async function cekHasil(){
     statusCell.className = "status lose";
   }
 
-  setTimeout(initPeriodeBaru,2000);
+  // cek apakah periode sudah ganti
+  setTimeout(cekPeriodeBaru,2000);
 }
 
-async function initPeriodeBaru(){
-  resultChecked = false;
+async function cekPeriodeBaru(){
   const data = await ambilAPI();
   if(!data) return;
 
-  tambahBaris(data.periode);
+  if(data.periode !== lastPeriode){
+    lastPeriode = data.periode;
+    resultChecked = false;
+    tambahBaris(data.periode);
+  }
 }
 
 async function start(){
   const data = await ambilAPI();
   if(!data) return;
 
+  lastPeriode = data.periode;
   tambahBaris(data.periode);
   mulaiCountdown();
 }
