@@ -1,49 +1,46 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Prediksi Random</title>
+    <title>Prediksi</title>
     <style>
         body{
             margin:0;
-            font-family: Arial;
-            background:#111;
-            color:white;
+            font-family:Arial;
+            background:#000;
         }
 
-        .container{
-            display:flex;
-            flex-direction:column;
-            height:100vh;
-        }
-
-        /* 25% ATAS */
-        .top{
-            height:25%;
-            padding:15px;
-            background:#181818;
-            overflow:auto;
-        }
-
-        /* 75% BAWAH */
-        .bottom{
-            height:75%;
-        }
-
+        /* WEB FULL */
         iframe{
+            position:fixed;
+            top:0;
+            left:0;
             width:100%;
             height:100%;
             border:none;
+        }
+
+        /* PANEL OVERLAY */
+        .panel{
+            position:fixed;
+            top:0;
+            left:0;
+            width:100%;
+            background:rgba(0,0,0,0.85);
+            color:white;
+            padding:10px;
+            z-index:9999;
         }
 
         table{
             width:100%;
             border-collapse:collapse;
             margin-top:10px;
+            font-size:13px;
         }
 
         th,td{
             border:1px solid #444;
-            padding:6px;
+            padding:4px;
             text-align:center;
         }
 
@@ -52,43 +49,39 @@
         }
 
         h2,h1{
-            margin:5px 0;
+            margin:3px 0;
         }
+
+        .win{ color:lime; }
+        .lose{ color:red; }
+
     </style>
 </head>
 <body>
 
-<div class="container">
+<iframe src="https://551ck.com"></iframe>
 
-    <!-- 25% AREA PREDIKSI -->
-    <div class="top">
+<div class="panel">
+    <h2>PERIODE: <span id="periode">-</span></h2>
+    <h1>PREDIKSI: <span id="prediksi">-</span></h1>
 
-        <h2>PERIODE: <span id="periode">-</span></h2>
-        <h1>PREDIKSI: <span id="prediksi">-</span></h1>
-
-        <table>
-            <thead>
-                <tr>
-                    <th>Count</th>
-                    <th>Periode</th>
-                    <th>Prediksi</th>
-                    <th>Hasil</th>
-                    <th>Status</th>
-                </tr>
-            </thead>
-            <tbody id="historyTable"></tbody>
-        </table>
-
-    </div>
-
-    <!-- 75% WEB 55 -->
-    <div class="bottom">
-        <iframe src="https://55x4mqd.com/#/"></iframe>
-    </div>
-
+    <table>
+        <thead>
+            <tr>
+                <th>No</th>
+                <th>Periode</th>
+                <th>Prediksi</th>
+                <th>Hasil</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody id="historyTable"></tbody>
+    </table>
 </div>
 
 <script>
+
+const API_URL = "https://NAMAVERSEL.vercel.app/api"; // GANTI ini
 
 let lastPeriode = null;
 let currentPrediction = null;
@@ -114,7 +107,7 @@ function renderTable(){
                 <td>${row.periode}</td>
                 <td>${row.prediksi}</td>
                 <td>${row.hasil}</td>
-                <td>${row.status}</td>
+                <td class="${row.status === 'WIN' ? 'win' : 'lose'}">${row.status}</td>
             </tr>
         `;
     });
@@ -122,15 +115,13 @@ function renderTable(){
 
 async function fetchData(){
     try{
-        const res = await fetch("/api?t=" + Date.now());
+        const res = await fetch(API_URL + "?t=" + Date.now());
         const data = await res.json();
 
         if(!data || !data.periode) return;
 
-        // PERIODE BARU
         if(data.periode !== lastPeriode){
 
-            // Update hasil periode sebelumnya
             if(lastPeriode !== null && historyData.length > 0){
                 const hasilKategori = kategori(data.hasil);
                 const status = (currentPrediction === hasilKategori) ? "WIN" : "LOSE";
@@ -139,7 +130,6 @@ async function fetchData(){
                 historyData[0].status = status;
             }
 
-            // Buat prediksi baru
             currentPrediction = randomPrediksi();
             countNumber++;
 
@@ -168,7 +158,6 @@ async function fetchData(){
     }
 }
 
-// Refresh tiap 5 detik
 setInterval(fetchData,5000);
 fetchData();
 
