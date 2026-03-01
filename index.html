@@ -3,28 +3,27 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>55Five Real-Time Prediction</title>
+    <title>55Five Prediction Pro</title>
     <style>
-        body, html { margin: 0; padding: 0; height: 100%; overflow: hidden; background: #121212; font-family: 'Segoe UI', sans-serif; color: white; }
+        body, html { margin: 0; padding: 0; height: 100%; overflow: hidden; background: #121212; font-family: sans-serif; color: white; }
         #top-panel { height: 35vh; width: 100%; padding: 10px; box-sizing: border-box; border-bottom: 2px solid #ff4444; background: #1a1a1a; overflow-y: auto; }
         #bottom-panel { height: 65vh; width: 100%; background: #000; }
         iframe { width: 100%; height: 100%; border: none; }
         table { width: 100%; border-collapse: collapse; margin-top: 5px; table-layout: fixed; }
         th { background: #333; color: #888; font-size: 10px; padding: 6px; text-transform: uppercase; }
         td { padding: 8px; text-align: center; border-bottom: 1px solid #2a2a2a; font-size: 12px; font-weight: bold; }
-        .win { color: #00ff00; background: rgba(0, 255, 0, 0.05); }
-        .lose { color: #ff4444; background: rgba(255, 68, 68, 0.05); }
+        .win { color: #00ff00; background: rgba(0, 255, 0, 0.1); }
+        .lose { color: #ff4444; background: rgba(255, 68, 68, 0.1); }
         .timer { color: #ffeb3b; font-family: monospace; font-size: 16px; }
         .period { color: #03a9f4; }
-        .running { font-style: italic; color: #ff9800; }
     </style>
 </head>
 <body>
 
 <div id="top-panel">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-        <div id="status" style="font-size: 11px; color: #666;">Menunggu Detik 01/31...</div>
-        <div style="font-size: 12px;">Prediksi Berikutnya: <span id="next-guess" style="color: #ffeb3b;">---</span></div>
+        <div id="status" style="font-size: 11px; color: #888;">Menghubungkan ke API...</div>
+        <div style="font-size: 12px;">Prediksi: <span id="next-guess" style="color: #ffeb3b;">---</span></div>
     </div>
     
     <table>
@@ -46,36 +45,39 @@
 </div>
 
 <script>
-    // MASUKKAN TOKEN BARU ANDA DI SINI
+    // DATA DARI CODE ASLI ANDA
     const AUTH_HEADER = "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpYXQiOiIxNzM3MjUyMzk3IiwibmJmIjoiMTczNzI1MjM5NyIsImV4cCI6IjE3MzcyNTQxOTciLCJodHRwOi8vc2NoZW1hcy5taWNyb3NvZnQuY29tL3dzLzIwMDgvMDYvaWRlbnRpdHkvY2xhaW1zL2V4cGlyYXRpb24iOiIxLzE5LzIwMjUgOTozNjozNyBBTSIsImh0dHA6Ly9zY2hlbWFzLm1pY3Jvc29mdC5jb20vd3MvMjAwOC8wNi9pZGVudGl0eS9jbGFpbXMvcm9sZSI6IkFjY2Vzc19Ub2tlbiIsIlVzZXJJZCI6IjQ0MTgwNCIsIlVzZXJOYW1lIjoiNjI4NTc5NjI5NzE4OSIsIlVzZXJQaG90byI6Imh0dHBzOi8vYXBpLmxpZ2h0c3BhY2VjZG4uY29tL2ltZy9hdmF0YXIuY2ZhOGRkOWQuc3ZnIiwiTmlja05hbWUiOiJSYWNrbmFyb2NLIiwiQW1vdW50IjoiMTM3LjAwIiwiSW50ZWdyYWwiOiIwIiwiTG9naW5NYXJrIjoiSDUiLCJMb2dpblRpbWUiOiIxLzE5LzIwMjUgOTowNjozNyBBTSIsIkxvZ2luSVBBZGRyZXNzIjoiMTE0LjEwLjEzNC4xODIiLCJEYk51bWJlciI6IjAiLCJJc3ZhbGlkYXRvciI6IjAiLCJLZXlDb2RlIjoiNTgwIiwiVG9rZW5UeXBlIjoiQWNjZXNzX1Rva2VuIiwiUGhvbmVUeXBlIjoiMSIsIlVzZXJUeXBlIjoiMCIsIlVzZXJOYW1lMiI6IiIsImlzcyI6Imp3dElzc3VlciIsImF1ZCI6ImxvdHRlcnlUaWNrZXQifQ.gSi3-FxVwLXKTA1drTBTrA6HqiASn6eBkmsWMyW2HP0";
-    
-    // Gunakan Proxy yang berbeda jika corsproxy.io bermasalah
     const PROXY = "https://api.allorigins.win";
-    const API_URL = "https://newapi.55lottertttapi.com";
-    
+    const API_LIST = "https://newapi.55lottertttapi.com";
+    const API_ISSUE = "https://newapi.55lottertttapi.com";
+
     let history = [];
     let currentPrediction = "BESAR";
+    let activePeriod = "-----";
     let isFetching = false;
 
     function startEngine() {
         generatePrediction();
-        render();
-        setInterval(() => {
+        setInterval(async () => {
             const now = new Date();
             const sec = now.getSeconds();
             
-            // Sync Countdown
+            // Sync Countdown & Periode
             let count = (sec < 30) ? (30 - sec) : (60 - sec);
             const live = document.getElementById('live-count');
             if (live) live.innerText = count + "s";
+            
+            if (sec === 0 || sec === 30) {
+                updateCurrentPeriod();
+            }
 
-            // Trigger Detik 1 & 31
+            // Ambil Hasil (Detik 1 & 31)
             if ((sec === 1 || sec === 31) && !isFetching) {
                 isFetching = true;
-                fetchData();
+                fetchFinalResult();
             }
-            
-            // Reset Trigger Detik 3 & 33
+
+            // Reset Ronde Baru (Detik 3 & 33)
             if (sec === 3 || sec === 33) {
                 isFetching = false;
                 generatePrediction();
@@ -83,44 +85,56 @@
         }, 1000);
     }
 
-    async function fetchData() {
-        document.getElementById('status').innerText = "Mengambil data...";
-        
-        const payload = {
-            "pageSize": 10, "pageNo": 1, "typeId": 30, "language": 0,
-            "random": "166b81d9568e4123a83a2c7fdb80b7d9", "signature": "5DB43C344C7381B72B5262FFB3572444", "timestamp":1737252405
-        };
-
+    async function updateCurrentPeriod() {
         try {
-            const response = await fetch(PROXY + encodeURIComponent(API_URL), {
+            const res = await fetch(PROXY + encodeURIComponent(API_ISSUE), {
                 method: 'POST',
-                headers: { 
-                    'Content-Type': 'application/json',
-                    'Authorization': AUTH_HEADER 
-                },
-                body: JSON.stringify(payload)
+                headers: { 'Content-Type': 'application/json', 'Authorization': AUTH_HEADER },
+                body: JSON.stringify({
+                    "typeId": 30,
+                    "language": 0,
+                    "random": "166b81d9568e4123a83a2c7fdb80b7d9",
+                    "signature": "5DB43C344C7381B72B5262FFB3572444",
+                    "timestamp": 1737252405
+                })
             });
+            const json = await res.json();
+            activePeriod = json.data.issueNumber.toString().slice(-5);
+            render();
+        } catch (e) { console.log("Issue API Error"); }
+    }
 
-            const result = await response.json();
+    async function fetchFinalResult() {
+        document.getElementById('status').innerText = "Cek Hasil...";
+        try {
+            const res = await fetch(PROXY + encodeURIComponent(API_LIST), {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': AUTH_HEADER },
+                body: JSON.stringify({
+                    "pageSize": 10,
+                    "pageNo": 1,
+                    "typeId": 30,
+                    "language": 0,
+                    "random": "b631eb26bac6403e99093913e5bb48c5",
+                    "signature": "A6203E85132E5FE26B5F43DDF1ECDD07",
+                    "timestamp": 1737252405
+                })
+            });
+            const json = await res.json();
+            const lastData = json.data.list[0]; // Baris teratas (terbaru)
             
-            // Validasi data masuk
-            if (result && result.data && result.data.list) {
-                const latest = result.data.list[0];
-                const period = latest.issueNumber.toString().slice(-5);
-                const num = parseInt(latest.number.split(",").pop());
-                const cat = num >= 5 ? "BESAR" : "KECIL";
-                const status = (currentPrediction === cat) ? "WIN" : "LOSE";
+            const resPeriod = lastData.issueNumber.toString().slice(-5);
+            const num = parseInt(lastData.number.split(",").pop());
+            const cat = num >= 5 ? "BESAR" : "KECIL";
+            const status = (currentPrediction === cat) ? "WIN" : "LOSE";
 
-                history.unshift({ period, pred: currentPrediction, num, cat, stat: status });
-                if (history.length > 6) history.pop();
-                render();
-                document.getElementById('status').innerText = "Update Berhasil";
-            } else {
-                throw new Error("Data Kosong");
-            }
+            history.unshift({ period: resPeriod, pred: currentPrediction, num, cat, stat: status });
+            if (history.length > 6) history.pop();
+            
+            render();
+            document.getElementById('status').innerText = "Berhasil";
         } catch (e) {
-            document.getElementById('status').innerText = "Gagal Ambil Data (Cek Token)";
-            console.error(e);
+            document.getElementById('status').innerText = "Token Expired / Error API";
         }
     }
 
@@ -133,7 +147,7 @@
     function render() {
         const tbody = document.getElementById('table-body');
         let html = `<tr>
-            <td class="period running">Next</td>
+            <td class="period">${activePeriod}</td>
             <td>${currentPrediction}</td>
             <td class="timer" id="live-count">--s</td>
             <td>--</td>
