@@ -1,190 +1,201 @@
 <!DOCTYPE html>
-<html>
+<html lang="id">
 <head>
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>WEB 55 PANEL</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Web55</title>
 
-<style>
-body{
-  margin:0;
-  background:#111;
-  color:white;
-  font-family:Arial;
-  height:100vh;
-  display:flex;
-  flex-direction:column;
-}
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: Arial, sans-serif;
+        }
 
-.panel{
-  height:25vh;
-  background:#1c1c1c;
-  overflow:auto;
-  padding:10px;
-}
+        body {
+            background: #111;
+            color: white;
+            height: 100vh;
+            overflow-y: auto;
+        }
 
-.web55{
-  height:75vh;
-}
+        .top-section {
+            height: 25vh;
+            background: #1e1e1e;
+            padding: 20px;
+            border-bottom: 2px solid #333;
+        }
 
-iframe{
-  width:100%;
-  height:100%;
-  border:none;
-}
+        .bottom-section {
+            height: 75vh;
+            padding: 20px;
+            overflow-y: auto;
+        }
 
-table{
-  width:100%;
-  border-collapse:collapse;
-  font-size:14px;
-}
+        h2 {
+            margin-bottom: 10px;
+        }
 
-th,td{
-  border:1px solid #333;
-  padding:6px;
-  text-align:center;
-}
+        .countdown {
+            font-size: 28px;
+            font-weight: bold;
+            color: #00ff99;
+        }
 
-th{
-  background:#222;
-}
+        .prediction-box {
+            margin-top: 10px;
+            padding: 10px;
+            background: #222;
+            border-radius: 8px;
+        }
 
-.win{
-  color:#00ff00;
-  font-weight:bold;
-}
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
 
-.lose{
-  color:#ff0000;
-  font-weight:bold;
-}
-</style>
+        th, td {
+            padding: 10px;
+            text-align: center;
+            border-bottom: 1px solid #333;
+        }
+
+        th {
+            background: #222;
+        }
+
+        .win {
+            color: #00ff00;
+            font-weight: bold;
+        }
+
+        .lose {
+            color: #ff4444;
+            font-weight: bold;
+        }
+
+        .besar {
+            color: orange;
+        }
+
+        .kecil {
+            color: cyan;
+        }
+    </style>
 </head>
-
 <body>
 
-<div class="panel">
-  <table>
-    <thead>
-      <tr>
-        <th>Periode</th>
-        <th>Prediksi</th>
-        <th>Count</th>
-        <th>Hasil</th>
-        <th>Status</th>
-      </tr>
-    </thead>
-    <tbody id="dataBody"></tbody>
-  </table>
+<div class="top-section">
+    <h2>Periode: <span id="periode">-</span></h2>
+    <div class="countdown">Sisa Waktu: <span id="timer">--</span> detik</div>
+
+    <div class="prediction-box">
+        <h3>Prediksi: <span id="prediksi">-</span></h3>
+        <p>Status: <span id="status">Menunggu...</span></p>
+    </div>
 </div>
 
-<div class="web55">
-  <iframe src="https://55x4mqd.com/#/home/"></iframe>
+<div class="bottom-section">
+    <h2>Riwayat Hasil</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Periode</th>
+                <th>Angka</th>
+                <th>Besar/Kecil</th>
+                <th>Prediksi</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody id="resultTable">
+        </tbody>
+    </table>
 </div>
 
 <script>
+let historyData = [];
+let currentPeriode = null;
 
-let currentRow = null;
-let timer = null;
-let resultChecked = false;
-
-function kategori(num){
-  return num <= 4 ? "Kecil" : "Besar";
+function getKategori(angka) {
+    return angka >= 5 ? "Besar" : "Kecil";
 }
 
-function buatPrediksi(){
-  return Math.random() > 0.5 ? "Besar" : "Kecil";
-}
-
-async function ambilAPI(){
-  try{
-    const res = await fetch("https://link55.vercel.app/api");
-    return await res.json();
-  }catch(e){
-    return null;
-  }
-}
-
-function tambahBaris(periode){
-  const tbody = document.getElementById("dataBody");
-  const tr = document.createElement("tr");
-  const pred = buatPrediksi();
-
-  tr.innerHTML = `
-    <td>${periode}</td>
-    <td>${pred}</td>
-    <td class="count">-</td>
-    <td class="hasil">-</td>
-    <td class="status">-</td>
-  `;
-
-  tbody.insertBefore(tr, tbody.firstChild);
-  currentRow = tr;
-}
-
-function mulaiCountdown(){
-  clearInterval(timer);
-
-  timer = setInterval(async () => {
-
+function updateTimer() {
     const now = new Date();
-    const sec = now.getSeconds();
+    const seconds = now.getSeconds();
+    const remaining = 30 - (seconds % 30);
+    document.getElementById("timer").innerText = remaining;
+}
 
-    let sisa = sec < 30 ? 30 - sec : 60 - sec;
+setInterval(updateTimer, 1000);
+updateTimer();
 
-    if(currentRow){
-      currentRow.querySelector(".count").innerText = sisa;
+async function fetchData() {
+    try {
+        const response = await fetch("api/index.js");
+        const data = await response.json();
+
+        /*
+        Format data harus seperti ini dari api/index.js:
+        {
+            periode: "123456",
+            angka: 6,
+            prediksi: "Besar",
+            status: "WIN" atau "LOSE"
+        }
+        */
+
+        if (data.periode !== currentPeriode) {
+            currentPeriode = data.periode;
+
+            document.getElementById("periode").innerText = data.periode;
+            document.getElementById("prediksi").innerText = data.prediksi;
+            document.getElementById("status").innerText = data.status;
+
+            const kategori = getKategori(data.angka);
+
+            historyData.unshift({
+                periode: data.periode,
+                angka: data.angka,
+                kategori: kategori,
+                prediksi: data.prediksi,
+                status: data.status
+            });
+
+            if (historyData.length > 5) {
+                historyData.pop();
+            }
+
+            renderTable();
+        }
+
+    } catch (error) {
+        console.log("Gagal ambil data:", error);
     }
-
-    if((sec === 1 || sec === 31) && !resultChecked){
-      resultChecked = true;
-      cekHasil();
-    }
-
-  },1000);
 }
 
-async function cekHasil(){
-  const data = await ambilAPI();
-  if(!data) return;
+function renderTable() {
+    const table = document.getElementById("resultTable");
+    table.innerHTML = "";
 
-  const hasil = data.hasil;
-  const kategoriHasil = kategori(hasil);
-
-  const hasilCell = currentRow.querySelector(".hasil");
-  const statusCell = currentRow.querySelector(".status");
-  const prediksi = currentRow.children[1].innerText;
-
-  hasilCell.innerText = kategoriHasil + " " + hasil;
-
-  if(prediksi === kategoriHasil){
-    statusCell.innerText = "WIN";
-    statusCell.className = "status win";
-  }else{
-    statusCell.innerText = "LOSE";
-    statusCell.className = "status lose";
-  }
-
-  setTimeout(initPeriodeBaru,2000);
+    historyData.forEach(item => {
+        const row = `
+            <tr>
+                <td>${item.periode}</td>
+                <td>${item.angka}</td>
+                <td class="${item.kategori.toLowerCase()}">${item.kategori}</td>
+                <td>${item.prediksi}</td>
+                <td class="${item.status.toLowerCase()}">${item.status}</td>
+            </tr>
+        `;
+        table.innerHTML += row;
+    });
 }
 
-async function initPeriodeBaru(){
-  resultChecked = false;
-  const data = await ambilAPI();
-  if(!data) return;
-
-  tambahBaris(data.periode);
-}
-
-async function start(){
-  const data = await ambilAPI();
-  if(!data) return;
-
-  tambahBaris(data.periode);
-  mulaiCountdown();
-}
-
-start();
-
+setInterval(fetchData, 2000);
+fetchData();
 </script>
 
 </body>
