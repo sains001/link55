@@ -85,8 +85,8 @@ th{
 
 let currentRow = null;
 let timer = null;
-let resultChecked = false;
 let lastPeriode = null;
+let sudahIsiHasil = false;
 
 function kategori(num){
   return num <= 4 ? "Kecil" : "Besar";
@@ -98,9 +98,10 @@ function buatPrediksi(){
 
 async function ambilAPI(){
   try{
-    const res = await fetch("https://link55.vercel.app/api?t="+Date.now());
+    const res = await fetch("/api?t=" + Date.now());
     return await res.json();
   }catch(e){
+    console.log("API ERROR:", e);
     return null;
   }
 }
@@ -120,35 +121,52 @@ function tambahBaris(periode){
 
   tbody.insertBefore(tr, tbody.firstChild);
   currentRow = tr;
+  sudahIsiHasil = false;
 }
 
 function mulaiCountdown(){
   clearInterval(timer);
 
-  timer = setInterval(async () => {
+  timer = setInterval(() => {
 
     const now = new Date();
     const sec = now.getSeconds();
-    let sisa = sec < 30 ? 30 - sec : 60 - sec;
+
+    // countdown sinkron 30 detik
+    let sisa = 30 - (sec % 30);
+    if(sisa === 30) sisa = 0;
 
     if(currentRow){
       currentRow.querySelector(".count").innerText = sisa;
     }
 
-    // cek hasil saat detik 1 & 31
-    if((sec === 1 || sec === 31) && !resultChecked){
-      resultChecked = true;
-      cekHasil();
+    // cek data tiap 4 detik
+    if(sec % 4 === 0){
+      cekData();
     }
 
   },1000);
 }
 
-async function cekHasil(){
+async function cekData(){
   const data = await ambilAPI();
-  if(!data || !currentRow) return;
+  if(!data) return;
 
-  const hasil = data.hasil;
+  // PERIODE BARU
+  if(data.periode !== lastPeriode){
+    lastPeriode = data.periode;
+    tambahBaris(data.periode);
+    return;
+  }
+
+  // PERIODE SAMA → isi hasil kalau belum
+  if(!sudahIsiHasil){
+    isiHasil(data.hasil);
+    sudahIsiHasil = true;
+  }
+}
+
+function isiHasil(hasil){
   const kategoriHasil = kategori(hasil);
 
   const hasilCell = currentRow.querySelector(".hasil");
@@ -163,20 +181,6 @@ async function cekHasil(){
   }else{
     statusCell.innerText = "LOSE";
     statusCell.className = "status lose";
-  }
-
-  // cek apakah periode sudah ganti
-  setTimeout(cekPeriodeBaru,2000);
-}
-
-async function cekPeriodeBaru(){
-  const data = await ambilAPI();
-  if(!data) return;
-
-  if(data.periode !== lastPeriode){
-    lastPeriode = data.periode;
-    resultChecked = false;
-    tambahBaris(data.periode);
   }
 }
 
