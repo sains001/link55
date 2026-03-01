@@ -4,42 +4,89 @@
     <title>Prediksi Random</title>
     <style>
         body{
+            margin:0;
             font-family: Arial;
             background:#111;
             color:white;
-            text-align:center;
         }
+
+        .container{
+            display:flex;
+            flex-direction:column;
+            height:100vh;
+        }
+
+        /* 25% ATAS */
+        .top{
+            height:25%;
+            padding:15px;
+            background:#181818;
+            overflow:auto;
+        }
+
+        /* 75% BAWAH */
+        .bottom{
+            height:75%;
+        }
+
+        iframe{
+            width:100%;
+            height:100%;
+            border:none;
+        }
+
         table{
             width:100%;
             border-collapse:collapse;
-            margin-top:20px;
+            margin-top:10px;
         }
+
         th,td{
             border:1px solid #444;
-            padding:8px;
+            padding:6px;
+            text-align:center;
         }
+
         th{
             background:#222;
+        }
+
+        h2,h1{
+            margin:5px 0;
         }
     </style>
 </head>
 <body>
 
-<h2>PERIODE: <span id="periode">-</span></h2>
-<h1>PREDIKSI: <span id="prediksi">-</span></h1>
+<div class="container">
 
-<table>
-    <thead>
-        <tr>
-            <th>Count</th>
-            <th>Periode</th>
-            <th>Prediksi</th>
-            <th>Hasil</th>
-            <th>Status</th>
-        </tr>
-    </thead>
-    <tbody id="historyTable"></tbody>
-</table>
+    <!-- 25% AREA PREDIKSI -->
+    <div class="top">
+
+        <h2>PERIODE: <span id="periode">-</span></h2>
+        <h1>PREDIKSI: <span id="prediksi">-</span></h1>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Count</th>
+                    <th>Periode</th>
+                    <th>Prediksi</th>
+                    <th>Hasil</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody id="historyTable"></tbody>
+        </table>
+
+    </div>
+
+    <!-- 75% WEB 55 -->
+    <div class="bottom">
+        <iframe src="https://551ck.com"></iframe>
+    </div>
+
+</div>
 
 <script>
 
@@ -80,8 +127,10 @@ async function fetchData(){
 
         if(!data || !data.periode) return;
 
+        // PERIODE BARU
         if(data.periode !== lastPeriode){
 
+            // Update hasil periode sebelumnya
             if(lastPeriode !== null && historyData.length > 0){
                 const hasilKategori = kategori(data.hasil);
                 const status = (currentPrediction === hasilKategori) ? "WIN" : "LOSE";
@@ -90,6 +139,7 @@ async function fetchData(){
                 historyData[0].status = status;
             }
 
+            // Buat prediksi baru
             currentPrediction = randomPrediksi();
             countNumber++;
 
@@ -101,7 +151,7 @@ async function fetchData(){
                 status:"-"
             });
 
-            if(historyData.length > 5){
+            if(historyData.length > 10){
                 historyData.pop();
             }
 
@@ -113,12 +163,13 @@ async function fetchData(){
             renderTable();
         }
 
-    }catch(e){
-        console.log("Fetch error:", e);
+    }catch(err){
+        console.log("Error:",err);
     }
 }
 
-setInterval(fetchData,2000);
+// Refresh tiap 5 detik
+setInterval(fetchData,5000);
 fetchData();
 
 </script>
