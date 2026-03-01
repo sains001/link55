@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>Wingo X7 Panel</title>
+<title>Wingo Sync Panel</title>
 <style>
 body{
     margin:0;
@@ -14,8 +14,9 @@ body{
 /* SPLIT */
 .top{
     height:30vh;
-    padding:8px;
+    padding:10px;
     box-sizing:border-box;
+    background:#000;
 }
 
 .bottom{
@@ -28,21 +29,26 @@ body{
     border:none;
 }
 
-/* HEADER */
+/* PANEL STYLE */
 .row{
     display:flex;
     justify-content:space-between;
     align-items:center;
 }
 
-.periode{ font-size:14px; }
-.timer{ font-size:24px; font-weight:bold; }
+.periode{
+    font-size:18px;
+}
 
-/* HASIL */
+.timer{
+    font-size:32px;
+    font-weight:bold;
+}
+
 .hasil{
-    font-size:40px;
+    font-size:48px;
     text-align:center;
-    margin-top:3px;
+    margin-top:5px;
 }
 
 .k{ color:#00BFFF; }
@@ -56,44 +62,19 @@ body{
     50%{ opacity:0; }
 }
 
-/* HISTORY */
 .history{
-    margin-top:5px;
+    margin-top:10px;
     display:flex;
     justify-content:center;
-    gap:4px;
+    gap:8px;
     flex-wrap:wrap;
 }
 
 .history div{
-    padding:3px 5px;
-    border:1px solid #FFD700;
-    border-radius:4px;
-    font-size:11px;
-}
-
-/* 4 MINI TABLE */
-.mini-tables{
-    margin-top:6px;
-    display:flex;
-    justify-content:space-between;
-    gap:5px;
-}
-
-.box{
-    flex:1;
+    padding:5px 8px;
     border:1px solid #FFD700;
     border-radius:6px;
-    text-align:center;
-    padding:4px;
-    font-size:11px;
-}
-
-.win{ color:#00FF88; }
-.lose{ color:#FF4444; }
-
-.blink{
-    animation:blink 0.5s linear 6;
+    font-size:14px;
 }
 </style>
 </head>
@@ -110,13 +91,6 @@ body{
 
     <div class="history" id="history"></div>
 
-    <div class="mini-tables">
-        <div class="box" id="flashBox">-</div>
-        <div class="box win">WIN<br><span id="winTotal">0</span></div>
-        <div class="box lose">LOSE<br><span id="loseTotal">0</span></div>
-        <div class="box">L.Streakx<br><span id="maxLose">0</span></div>
-    </div>
-
 </div>
 
 <div class="bottom">
@@ -126,15 +100,6 @@ body{
 <script>
 
 let historyData = [];
-let lastPeriode = null;
-
-let winTotal = 0;
-let loseTotal = 0;
-
-let currentLoseStreak = 0;
-let maxLoseStreak = 0;
-
-/* ===================== */
 
 function getPeriode(){
     const now = new Date();
@@ -169,8 +134,8 @@ function generateResult(period){
     return seed % 10;
 }
 
-function addHistory(val){
-    historyData.unshift(val);
+function addHistory(val, kategori){
+    historyData.unshift(val + kategori);
     if(historyData.length > 10){
         historyData.pop();
     }
@@ -185,58 +150,9 @@ function addHistory(val){
     });
 }
 
-/* ===================== */
-/* POLA PREDIKSI SEDERHANA */
-
-function generatePrediction(){
-
-    if(historyData.length < 5){
-        return "K";
-    }
-
-    let kCount = 0;
-    let bCount = 0;
-
-    for(let i=0;i<5;i++){
-        if(historyData[i].includes("K")) kCount++;
-        else bCount++;
-    }
-
-    // jika 5 terakhir dominan K → prediksi B (lawan arus)
-    if(kCount > bCount) return "B";
-    else return "K";
-}
-
-/* ===================== */
-
-function updateStats(isWin){
-
-    const flashBox = document.getElementById("flashBox");
-
-    if(isWin){
-        winTotal++;
-        currentLoseStreak = 0;
-        flashBox.innerText = "WIN";
-        flashBox.className = "box win blink";
-    }else{
-        loseTotal++;
-        currentLoseStreak++;
-        if(currentLoseStreak > maxLoseStreak){
-            maxLoseStreak = currentLoseStreak;
-        }
-        flashBox.innerText = "LOSE";
-        flashBox.className = "box lose blink";
-    }
-
-    document.getElementById("winTotal").innerText = winTotal;
-    document.getElementById("loseTotal").innerText = loseTotal;
-    document.getElementById("maxLose").innerText = maxLoseStreak;
-}
-
-/* ===================== */
+let lastPeriode = null;
 
 function update(){
-
     const periode = getPeriode();
     const sisa = getRemaining();
 
@@ -253,13 +169,7 @@ function update(){
         hasilEl.innerText = angka + " (" + kategori + ")";
         hasilEl.className = "hasil " + (kategori==="K"?"k":"b") + " flash";
 
-        addHistory(angka + kategori);
-
-        const prediksi = generatePrediction();
-
-        const isWin = prediksi === kategori;
-
-        updateStats(isWin);
+        addHistory(angka, kategori);
     }
 }
 
