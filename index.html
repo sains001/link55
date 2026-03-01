@@ -1,118 +1,29 @@
-<!DOCTYPE html>
-<html lang="id">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Web55</title>
-
-<style>
-body{
-    margin:0;
-    background:#111;
-    color:white;
-    font-family:Arial;
-}
-.top{
-    height:25vh;
-    padding:15px;
-    border-bottom:2px solid #333;
-}
-.bottom{
-    height:75vh;
-    overflow-y:auto;
-    padding:15px;
-}
-table{
-    width:100%;
-    border-collapse:collapse;
-}
-th,td{
-    padding:8px;
-    text-align:center;
-    border-bottom:1px solid #333;
-}
-.win{color:#00ff66;font-weight:bold;}
-.lose{color:#ff4444;font-weight:bold;}
-.besar{color:orange;}
-.kecil{color:cyan;}
-.count{
-    font-size:28px;
-    font-weight:bold;
-    color:#00ffcc;
-}
-</style>
-</head>
-<body>
-
-<div class="top">
-    <h3>Periode: <span id="periode">-</span></h3>
-    <div class="count">Countdown: <span id="timer">-</span></div>
-    <h3>Prediksi: <span id="prediksi">-</span></h3>
-</div>
-
-<div class="bottom">
-<table>
-<thead>
-<tr>
-<th>Periode</th>
-<th>Prediksi</th>
-<th>Count</th>
-<th>Hasil</th>
-<th>Status</th>
-</tr>
-</thead>
-<tbody id="tableBody"></tbody>
-</table>
-</div>
-
-<script>
-let lastPeriode = null;
-let currentPrediction = null;
-let historyData = [];
-let countNumber = 1;
-
-// ===== KATEGORI =====
-function kategori(num){
-    return num >= 5 ? "Besar" : "Kecil";
-}
-
-// ===== RANDOM PREDIKSI =====
-function randomPrediksi(){
-    return Math.random() < 0.5 ? "Besar" : "Kecil";
-}
-
-// ===== TIMER REAL 30 DETIK =====
-function updateTimer(){
-    const now = new Date();
-    const s = now.getSeconds();
-    const remain = 30 - (s % 30);
-    document.getElementById("timer").innerText = remain;
-}
-setInterval(updateTimer,1000);
-updateTimer();
-
-// ===== FETCH DATA =====
 async function fetchData(){
     try{
-        const res = await fetch("api/data.json?t="+Date.now());
+        const res = await fetch("/api?t=" + Date.now());
         const data = await res.json();
+
+        if(!data || !data.periode) return;
 
         if(data.periode !== lastPeriode){
 
-            // Jika ada periode lama, tentukan statusnya dulu
-            if(lastPeriode !== null){
-                const hasilKategori = kategori(data.angka);
+            // =========================
+            // HITUNG STATUS PERIODE LAMA
+            // =========================
+            if(lastPeriode !== null && historyData.length > 0){
+                const hasilKategori = kategori(data.hasil);
                 const status = (currentPrediction === hasilKategori) ? "WIN" : "LOSE";
 
-                historyData[0].hasil = data.angka;
+                historyData[0].hasil = data.hasil;
                 historyData[0].status = status;
             }
 
-            // Buat prediksi baru
+            // =========================
+            // BUAT PREDIKSI BARU
+            // =========================
             currentPrediction = randomPrediksi();
             countNumber++;
 
-            // Tambah baris baru di atas
             historyData.unshift({
                 periode:data.periode,
                 prediksi:currentPrediction,
@@ -121,7 +32,6 @@ async function fetchData(){
                 status:"-"
             });
 
-            // Maks 5 baris
             if(historyData.length > 5){
                 historyData.pop();
             }
@@ -135,34 +45,6 @@ async function fetchData(){
         }
 
     }catch(e){
-        console.log("Error fetch:",e);
+        console.log("Fetch error:", e);
     }
 }
-
-// ===== RENDER TABLE =====
-function renderTable(){
-    const tb = document.getElementById("tableBody");
-    tb.innerHTML = "";
-
-    historyData.forEach(row=>{
-        tb.innerHTML += `
-        <tr>
-            <td>${row.periode}</td>
-            <td>${row.prediksi}</td>
-            <td>${row.count}</td>
-            <td>${row.hasil}</td>
-            <td class="${row.status === 'WIN' ? 'win' : (row.status === 'LOSE' ? 'lose' : '')}">
-                ${row.status}
-            </td>
-        </tr>`;
-    });
-}
-
-// Fetch tiap 2 detik
-setInterval(fetchData,2000);
-fetchData();
-
-</script>
-
-</body>
-</html>
