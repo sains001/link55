@@ -65,7 +65,7 @@ td{
 
 <script>
 // ================= CONFIG =================
-const AUTH_HEADER = "Bearer REPLACE_WITH_FRESH_TOKEN";
+const AUTH_HEADER = "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpYXQiOiIxNzM3MjUyMzk3IiwibmJmIjoiMTczNzI1MjM5NyIsImV4cCI6IjE3MzcyNTQxOTciLCJodHRwOi8vc2NoZW1hcy5taWNyb3NvZnQuY29tL3dzLzIwMDgvMDYvaWRlbnRpdHkvY2xhaW1zL2V4cGlyYXRpb24iOiIxLzE5LzIwMjUgOTozNjozNyBBTSIsImh0dHA6Ly9zY2hlbWFzLm1pY3Jvc29mdC5jb20vd3MvMjAwOC8wNi9pZGVudGl0eS9jbGFpbXMvcm9sZSI6IkFjY2Vzc19Ub2tlbiIsIlVzZXJJZCI6IjQ0MTgwNCIsIlVzZXJOYW1lIjoiNjI4NTc5NjI5NzE4OSIsIlVzZXJQaG90byI6Imh0dHBzOi8vYXBpLmxpZ2h0c3BhY2VjZG4uY29tL2ltZy9hdmF0YXIuY2ZhOGRkOWQuc3ZnIiwiTmlja05hbWUiOiJSYWNrbmFyb2NLIiwiQW1vdW50IjoiMTM3LjAwIiwiSW50ZWdyYWwiOiIwIiwiTG9naW5NYXJrIjoiSDUiLCJMb2dpblRpbWUiOiIxLzE5LzIwMjUgOTowNjozNyBBTSIsIkxvZ2luSVBBZGRyZXNzIjoiMTE0LjEwLjEzNC4xODIiLCJEYk51bWJlciI6IjAiLCJJc3ZhbGlkYXRvciI6IjAiLCJLZXlDb2RlIjoiNTgwIiwiVG9rZW5UeXBlIjoiQWNjZXNzX1Rva2VuIiwiUGhvbmVUeXBlIjoiMSIsIlVzZXJUeXBlIjoiMCIsIlVzZXJOYW1lMiI6IiIsImlzcyI6Imp3dElzc3VlciIsImF1ZCI6ImxvdHRlcnlUaWNrZXQifQ.gSi3-FxVwLXKTA1drTBTrA6HqiASn6eBkmsWMyW2HP0";
 
 const PROXY = "https://api.allorigins.win/raw?url=";
 const API_ISSUE = "https://newapi.55lottertttapi.com/api/webapi/GetGameIssue";
@@ -92,10 +92,12 @@ function tickEngine(){
   if(live) live.innerText = count+"s";
 
   if(sec===0 || sec===30) updateCurrentPeriod();
+
   if((sec===1 || sec===31) && !isFetching){
     isFetching = true;
     fetchFinalResult();
   }
+
   if(sec===3 || sec===33){
     isFetching = false;
     generatePrediction();
@@ -106,14 +108,12 @@ function tickEngine(){
 async function updateCurrentPeriod(){
   try{
     const res = await fetch(
-      PROXY + encodeURIComponent(API_ISSUE),
+      PROXY + API_ISSUE,
       {
         method:"POST",
         headers:{
           "Content-Type":"application/json; charset=UTF-8",
-          "Authorization":AUTH_HEADER,
-          "Origin":"https://55five96.com",
-          "Referer":"https://55five96.com/"
+          "Authorization":AUTH_HEADER
         },
         body:JSON.stringify({
           typeId:30,
@@ -132,7 +132,7 @@ async function updateCurrentPeriod(){
       render();
     }
   }catch(e){
-    console.log("GetGameIssue error",e);
+    console.error("GetGameIssue error",e);
   }
 }
 
@@ -140,14 +140,12 @@ async function fetchFinalResult(){
   document.getElementById("status").innerText="Syncing...";
   try{
     const res = await fetch(
-      PROXY + encodeURIComponent(API_LIST),
+      PROXY + API_LIST,
       {
         method:"POST",
         headers:{
           "Content-Type":"application/json; charset=UTF-8",
-          "Authorization":AUTH_HEADER,
-          "Origin":"https://55five96.com",
-          "Referer":"https://55five96.com/"
+          "Authorization":AUTH_HEADER
         },
         body:JSON.stringify({
           pageSize:10,
@@ -165,7 +163,7 @@ async function fetchFinalResult(){
     const lst = json?.data?.list || [];
     if(!lst.length) return;
 
-    const terbaru = lst[0]; // FIX SYNTAX
+    const terbaru = lst[0];
     const num = parseInt(terbaru.number.split(",").pop());
     const cat = num >= 5 ? "BESAR" : "KECIL";
     const stat = currentPrediction === cat ? "WIN" : "LOSE";
@@ -181,13 +179,14 @@ async function fetchFinalResult(){
     render();
 
   }catch(e){
-    document.getElementById("status").innerText="Error API/Token";
+    console.error("API ERROR",e);
+    document.getElementById("status").innerText="API / TOKEN ERROR";
   }
 }
 
 // ================= UI =================
 function generatePrediction(){
-  currentPrediction = Math.random()>0.5?"BESAR":"KECIL";
+  currentPrediction = Math.random()>0.5 ? "BESAR" : "KECIL";
   document.getElementById("next-guess").innerText=currentPrediction;
   render();
 }
