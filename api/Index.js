@@ -1,16 +1,19 @@
 export default async function handler(req, res) {
+
+  // Allow CORS (aman walau satu domain)
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Methods", "GET");
+
   try {
 
     // ======================
-    // 1️⃣ GET PERIODE TERBARU
+    // GET PERIODE
     // ======================
     const issueResp = await fetch(
       "https://newapi.55lottertttapi.com/api/webapi/GetGameIssue",
       {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           typeId: 30,
           language: 0,
@@ -25,25 +28,21 @@ export default async function handler(req, res) {
 
     if (!issueJson?.data?.issueNumber) {
       return res.status(500).json({
-        error: "Gagal ambil periode",
-        raw: issueJson
+        error: "Gagal ambil periode"
       });
     }
 
     const fullIssue = issueJson.data.issueNumber;
     const periode = fullIssue.toString().slice(-5);
 
-
     // ======================
-    // 2️⃣ GET HASIL TERBARU
+    // GET HASIL
     // ======================
     const resultResp = await fetch(
       "https://newapi.55lottertttapi.com/api/webapi/GetNoaverageEmerdList",
       {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           pageSize: 10,
           pageNo: 1,
@@ -57,21 +56,19 @@ export default async function handler(req, res) {
     );
 
     const resultJson = await resultResp.json();
-
     const list = resultJson?.data?.list || [];
 
     if (!list.length) {
       return res.status(500).json({
-        error: "List hasil kosong",
-        raw: resultJson
+        error: "List hasil kosong"
       });
     }
 
-    const numberString = list[0].number; // contoh: "5,3,7,2,8"
+    const numberString = list[0].number;
     const lastDigit = numberString.split(",").pop();
 
     // ======================
-    // RETURN FINAL JSON
+    // RETURN FINAL
     // ======================
     return res.status(200).json({
       periode,
