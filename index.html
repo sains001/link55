@@ -1,201 +1,167 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Web55</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Web55</title>
 
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: Arial, sans-serif;
-        }
-
-        body {
-            background: #111;
-            color: white;
-            height: 100vh;
-            overflow-y: auto;
-        }
-
-        .top-section {
-            height: 25vh;
-            background: #1e1e1e;
-            padding: 20px;
-            border-bottom: 2px solid #333;
-        }
-
-        .bottom-section {
-            height: 75vh;
-            padding: 20px;
-            overflow-y: auto;
-        }
-
-        h2 {
-            margin-bottom: 10px;
-        }
-
-        .countdown {
-            font-size: 28px;
-            font-weight: bold;
-            color: #00ff99;
-        }
-
-        .prediction-box {
-            margin-top: 10px;
-            padding: 10px;
-            background: #222;
-            border-radius: 8px;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 10px;
-        }
-
-        th, td {
-            padding: 10px;
-            text-align: center;
-            border-bottom: 1px solid #333;
-        }
-
-        th {
-            background: #222;
-        }
-
-        .win {
-            color: #00ff00;
-            font-weight: bold;
-        }
-
-        .lose {
-            color: #ff4444;
-            font-weight: bold;
-        }
-
-        .besar {
-            color: orange;
-        }
-
-        .kecil {
-            color: cyan;
-        }
-    </style>
+<style>
+body{
+    margin:0;
+    background:#111;
+    color:white;
+    font-family:Arial;
+}
+.top{
+    height:25vh;
+    padding:15px;
+    border-bottom:2px solid #333;
+}
+.bottom{
+    height:75vh;
+    overflow-y:auto;
+    padding:15px;
+}
+table{
+    width:100%;
+    border-collapse:collapse;
+}
+th,td{
+    padding:8px;
+    text-align:center;
+    border-bottom:1px solid #333;
+}
+.win{color:#00ff66;font-weight:bold;}
+.lose{color:#ff4444;font-weight:bold;}
+.besar{color:orange;}
+.kecil{color:cyan;}
+.count{
+    font-size:28px;
+    font-weight:bold;
+    color:#00ffcc;
+}
+</style>
 </head>
 <body>
 
-<div class="top-section">
-    <h2>Periode: <span id="periode">-</span></h2>
-    <div class="countdown">Sisa Waktu: <span id="timer">--</span> detik</div>
-
-    <div class="prediction-box">
-        <h3>Prediksi: <span id="prediksi">-</span></h3>
-        <p>Status: <span id="status">Menunggu...</span></p>
-    </div>
+<div class="top">
+    <h3>Periode: <span id="periode">-</span></h3>
+    <div class="count">Countdown: <span id="timer">-</span></div>
+    <h3>Prediksi: <span id="prediksi">-</span></h3>
 </div>
 
-<div class="bottom-section">
-    <h2>Riwayat Hasil</h2>
-    <table>
-        <thead>
-            <tr>
-                <th>Periode</th>
-                <th>Angka</th>
-                <th>Besar/Kecil</th>
-                <th>Prediksi</th>
-                <th>Status</th>
-            </tr>
-        </thead>
-        <tbody id="resultTable">
-        </tbody>
-    </table>
+<div class="bottom">
+<table>
+<thead>
+<tr>
+<th>Periode</th>
+<th>Prediksi</th>
+<th>Count</th>
+<th>Hasil</th>
+<th>Status</th>
+</tr>
+</thead>
+<tbody id="tableBody"></tbody>
+</table>
 </div>
 
 <script>
+let lastPeriode = null;
+let currentPrediction = null;
 let historyData = [];
-let currentPeriode = null;
+let countNumber = 1;
 
-function getKategori(angka) {
-    return angka >= 5 ? "Besar" : "Kecil";
+// ===== KATEGORI =====
+function kategori(num){
+    return num >= 5 ? "Besar" : "Kecil";
 }
 
-function updateTimer() {
+// ===== RANDOM PREDIKSI =====
+function randomPrediksi(){
+    return Math.random() < 0.5 ? "Besar" : "Kecil";
+}
+
+// ===== TIMER REAL 30 DETIK =====
+function updateTimer(){
     const now = new Date();
-    const seconds = now.getSeconds();
-    const remaining = 30 - (seconds % 30);
-    document.getElementById("timer").innerText = remaining;
+    const s = now.getSeconds();
+    const remain = 30 - (s % 30);
+    document.getElementById("timer").innerText = remain;
 }
-
-setInterval(updateTimer, 1000);
+setInterval(updateTimer,1000);
 updateTimer();
 
-async function fetchData() {
-    try {
-        const response = await fetch("api/index.js");
-        const data = await response.json();
+// ===== FETCH DATA =====
+async function fetchData(){
+    try{
+        const res = await fetch("api/data.json?t="+Date.now());
+        const data = await res.json();
 
-        /*
-        Format data harus seperti ini dari api/index.js:
-        {
-            periode: "123456",
-            angka: 6,
-            prediksi: "Besar",
-            status: "WIN" atau "LOSE"
-        }
-        */
+        if(data.periode !== lastPeriode){
 
-        if (data.periode !== currentPeriode) {
-            currentPeriode = data.periode;
+            // Jika ada periode lama, tentukan statusnya dulu
+            if(lastPeriode !== null){
+                const hasilKategori = kategori(data.angka);
+                const status = (currentPrediction === hasilKategori) ? "WIN" : "LOSE";
 
-            document.getElementById("periode").innerText = data.periode;
-            document.getElementById("prediksi").innerText = data.prediksi;
-            document.getElementById("status").innerText = data.status;
+                historyData[0].hasil = data.angka;
+                historyData[0].status = status;
+            }
 
-            const kategori = getKategori(data.angka);
+            // Buat prediksi baru
+            currentPrediction = randomPrediksi();
+            countNumber++;
 
+            // Tambah baris baru di atas
             historyData.unshift({
-                periode: data.periode,
-                angka: data.angka,
-                kategori: kategori,
-                prediksi: data.prediksi,
-                status: data.status
+                periode:data.periode,
+                prediksi:currentPrediction,
+                count:countNumber,
+                hasil:"-",
+                status:"-"
             });
 
-            if (historyData.length > 5) {
+            // Maks 5 baris
+            if(historyData.length > 5){
                 historyData.pop();
             }
+
+            lastPeriode = data.periode;
+
+            document.getElementById("periode").innerText = data.periode;
+            document.getElementById("prediksi").innerText = currentPrediction;
 
             renderTable();
         }
 
-    } catch (error) {
-        console.log("Gagal ambil data:", error);
+    }catch(e){
+        console.log("Error fetch:",e);
     }
 }
 
-function renderTable() {
-    const table = document.getElementById("resultTable");
-    table.innerHTML = "";
+// ===== RENDER TABLE =====
+function renderTable(){
+    const tb = document.getElementById("tableBody");
+    tb.innerHTML = "";
 
-    historyData.forEach(item => {
-        const row = `
-            <tr>
-                <td>${item.periode}</td>
-                <td>${item.angka}</td>
-                <td class="${item.kategori.toLowerCase()}">${item.kategori}</td>
-                <td>${item.prediksi}</td>
-                <td class="${item.status.toLowerCase()}">${item.status}</td>
-            </tr>
-        `;
-        table.innerHTML += row;
+    historyData.forEach(row=>{
+        tb.innerHTML += `
+        <tr>
+            <td>${row.periode}</td>
+            <td>${row.prediksi}</td>
+            <td>${row.count}</td>
+            <td>${row.hasil}</td>
+            <td class="${row.status === 'WIN' ? 'win' : (row.status === 'LOSE' ? 'lose' : '')}">
+                ${row.status}
+            </td>
+        </tr>`;
     });
 }
 
-setInterval(fetchData, 2000);
+// Fetch tiap 2 detik
+setInterval(fetchData,2000);
 fetchData();
+
 </script>
 
 </body>
