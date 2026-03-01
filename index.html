@@ -8,22 +8,20 @@
       background:#111;
       color:white;
       font-family:Arial;
+      height:100vh;
       display:flex;
+      flex-direction:column;
     }
 
-    /* 25% kiri */
     .panel{
-      width:25%;
+      height:25vh;
       background:#1c1c1c;
-      padding:10px;
       overflow:auto;
-      height:100vh;
+      padding:10px;
     }
 
-    /* 75% kanan */
     .web55{
-      width:75%;
-      height:100vh;
+      height:75vh;
     }
 
     iframe{
@@ -35,17 +33,12 @@
     table{
       width:100%;
       border-collapse:collapse;
-      font-size:14px;
     }
 
     th,td{
       border:1px solid #333;
       padding:6px;
       text-align:center;
-    }
-
-    th{
-      background:#222;
     }
 
     .win{
@@ -77,105 +70,98 @@
 </div>
 
 <div class="web55">
-  <iframe src="https://55five.io"></iframe>
+  <!-- GANTI LINK DI SINI -->
+  <iframe src="https://55x4mqd.com"></iframe>
 </div>
 
 <script>
 
-let currentPeriode = null;
-let currentRow = null;
-let countdownInterval = null;
-let resultChecked = false;
+let currentRow=null;
+let interval=null;
+let resultDone=false;
 
-function kategori(num){
-  return num <= 4 ? "Kecil" : "Besar";
-}
+function kategori(n){ return n<=4?"Kecil":"Besar"; }
+function prediksi(){ return Math.random()>0.5?"Besar":"Kecil"; }
 
-function buatPrediksi(){
-  return Math.random() > 0.5 ? "Besar" : "Kecil";
-}
-
-async function ambilAPI(){
-  const res = await fetch("https://link55.vercel.app/api");
-  return await res.json();
+async function api(){
+  const r=await fetch("https://link55.vercel.app/api");
+  return await r.json();
 }
 
 function tambahBaris(periode){
-  const tbody = document.getElementById("dataBody");
+  const tb=document.getElementById("dataBody");
+  const tr=document.createElement("tr");
+  const p=prediksi();
 
-  const tr = document.createElement("tr");
-
-  const prediksi = buatPrediksi();
-
-  tr.innerHTML = `
+  tr.innerHTML=`
     <td>${periode}</td>
-    <td>${prediksi}</td>
-    <td class="count">-</td>
-    <td class="hasil">-</td>
-    <td class="status">-</td>
+    <td>${p}</td>
+    <td class="c">-</td>
+    <td class="h">-</td>
+    <td class="s">-</td>
   `;
 
-  tbody.insertBefore(tr, tbody.firstChild);
-
-  currentRow = tr;
-  return prediksi;
+  tb.insertBefore(tr,tb.firstChild);
+  currentRow=tr;
 }
 
-function mulaiCountdown(sisa){
-  const countCell = currentRow.querySelector(".count");
+function mulai(){
+  clearInterval(interval);
 
-  clearInterval(countdownInterval);
+  interval=setInterval(async()=>{
+    const now=new Date();
+    const sec=now.getSeconds();
+    const sisa=sec<30?30-sec:60-sec;
 
-  countdownInterval = setInterval(() => {
-
-    if(sisa <= 0){
-      clearInterval(countdownInterval);
-      return;
+    if(currentRow){
+      currentRow.querySelector(".c").innerText=sisa;
     }
 
-    countCell.innerText = sisa;
-    sisa--;
+    if((sec===1||sec===31)&&!resultDone){
+      resultDone=true;
+      cekHasil();
+    }
 
   },1000);
 }
 
 async function cekHasil(){
-  const data = await ambilAPI();
+  const d=await api();
+  const hasil=d.hasil;
+  const kat=kategori(hasil);
 
-  const hasil = data.hasil;
-  const kategoriHasil = kategori(hasil);
+  const pred=currentRow.children[1].innerText;
+  const hCell=currentRow.querySelector(".h");
+  const sCell=currentRow.querySelector(".s");
 
-  const hasilCell = currentRow.querySelector(".hasil");
-  const statusCell = currentRow.querySelector(".status");
-  const prediksi = currentRow.children[1].innerText;
+  hCell.innerText=kat+" "+hasil;
 
-  hasilCell.innerText = kategoriHasil + " " + hasil;
-
-  if(prediksi === kategoriHasil){
-    statusCell.innerText = "WIN";
-    statusCell.className = "status win";
+  if(pred===kat){
+    sCell.innerText="WIN";
+    sCell.className="s win";
   }else{
-    statusCell.innerText = "LOSE";
-    statusCell.className = "status lose";
+    sCell.innerText="LOSE";
+    sCell.className="s lose";
   }
 
-  resultChecked = true;
-
-  setTimeout(initPeriodeBaru,2000);
+  setTimeout(init,2000);
 }
 
-async function initPeriodeBaru(){
-  resultChecked = false;
+async function init(){
+  resultDone=false;
+  const d=await api();
+  tambahBaris(d.periode);
+}
 
-  const data = await ambilAPI();
+async function start(){
+  const d=await api();
+  tambahBaris(d.periode);
+  mulai();
+}
 
-  currentPeriode = data.periode;
+start();
 
-  const pred = tambahBaris(currentPeriode);
+</script>
 
-  const detikSekarang = new Date().getSeconds();
-
-  let sisa;
-
-  if(detikSekarang < 30){
-    sisa = 30 - detikSekarang;
+</body>
+</html>
